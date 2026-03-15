@@ -41,17 +41,14 @@
   </div>
 
   <script>
-    // 🚀 【重要】請在此處貼上你部署後的 Web App URL (以 /exec 結尾)
     const GAS_URL = "https://script.google.com/macros/s/AKfycbyiucIiJ_Bzi4z6Z2oQNUoMPWdaSVxGNtF0me01sVQGBuWqOy_O4ar3r8wq2gD4URM9/exec";
 
     async function requestMicrophoneEarly() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        console.log("硬體麥克風授權成功");
         stream.getTracks().forEach(track => track.stop());
         document.getElementById('msg').innerText = "準備就緒";
       } catch (err) {
-        console.warn("麥克風預請求被拒絕:", err);
         document.getElementById('msg').innerHTML = "請點擊網址旁『鎖頭』允許麥克風";
       }
     }
@@ -103,21 +100,21 @@
     }
 
     if (recognition) {
-      recognition.onstart = function() {
+      recognition.onstart = () => {
         isRecording = true;
         const btn = document.getElementById('mainBtn');
         btn.innerText = "🛑 停止錄音";
         btn.classList.add('btn-recording');
       };
 
-      recognition.onend = function() {
+      recognition.onend = () => {
         isRecording = false;
         const btn = document.getElementById('mainBtn');
         btn.innerText = "🎤 開始錄音";
         btn.classList.remove('btn-recording');
       };
 
-      recognition.onresult = async function(event) {
+      recognition.onresult = async (event) => {
         const text = event.results[0][0].transcript;
         document.getElementById('display-text').innerText = text;
         document.getElementById('msg').innerText = "Kiwi 老師批改中...";
@@ -125,46 +122,34 @@
         try {
           const response = await fetch(GAS_URL, {
             method: "POST",
-            body: JSON.stringify({
-              text: text,
-              unit: "Body Parts"
-            })
+            body: JSON.stringify({ text: text, unit: "Body Parts" })
           });
-
           const data = await response.json();
           
           document.getElementById('msg').innerText = "評分完成";
           document.getElementById('stars').innerText = "⭐".repeat(data.score || 0);
 
-          // 🌟 這裡開始進行「英中拆分」邏輯
           const fullFeedback = data.feedback || "";
           if (fullFeedback.includes(" | ")) {
             const parts = fullFeedback.split(" | ");
-            const englishPart = parts[0].trim();   // 拿到英文評語
-            const chinesePart = parts[1].trim();   // 拿到繁體中文翻譯
-
-            // 1. 螢幕顯示：英文評語 + (中文翻譯)
+            const englishPart = parts[0].trim();
+            const chinesePart = parts[1].trim();
             document.getElementById('feedback').innerText = englishPart + "\n(" + chinesePart + ")";
-            
-            // 2. 語音：只唸英文部分
             speak(englishPart);
           } else {
-            // 萬一沒抓到分隔符號，就照舊顯示並朗讀
             document.getElementById('feedback').innerText = fullFeedback;
             speak(fullFeedback);
           }
-          
         } catch (err) {
-          console.error("連線錯誤:", err);
-          document.getElementById('msg').innerText = "連線失敗，請檢查網路或網址";
+          document.getElementById('msg').innerText = "連線失敗，請檢查網路";
         }
       };
+    } // <--- 補上這個原本漏掉的大括號
 
     function repeatKiwi() {
       const feedback = document.getElementById('feedback').innerText;
-      if (feedback && feedback.length > 5) {
-        // 如果有括號，只抓括號前的英文來唸
-        const englishOnly = feedback.split('(')[0].trim();
+      if (feedback && feedback !== "請按下方按鈕開始") {
+        const englishOnly = feedback.split('\n')[0].replace('(', '').trim();
         speak(englishOnly);
       }
     }
