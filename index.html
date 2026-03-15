@@ -42,7 +42,7 @@
 
   <script>
     // 🚀 【重要】請在此處貼上你部署後的 Web App URL (以 /exec 結尾)
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbylcpvHFxQ9i7irgtVX3ziTKGsvcrt-xDtm-lqShg46MW7FfhDQLlBznYZIJUvjq5Yu/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyiucIiJ_Bzi4z6Z2oQNUoMPWdaSVxGNtF0me01sVQGBuWqOy_O4ar3r8wq2gD4URM9/exec";
 
     async function requestMicrophoneEarly() {
       try {
@@ -122,7 +122,6 @@
         document.getElementById('display-text').innerText = text;
         document.getElementById('msg').innerText = "Kiwi 老師批改中...";
         
-        // 🚀 使用 fetch 發送到 GAS
         try {
           const response = await fetch(GAS_URL, {
             method: "POST",
@@ -132,36 +131,42 @@
             })
           });
 
-          // 獲取 GAS 回傳的 JSON 資料
           const data = await response.json();
           
           document.getElementById('msg').innerText = "評分完成";
           document.getElementById('stars').innerText = "⭐".repeat(data.score || 0);
-          document.getElementById('feedback').innerText = data.feedback;
-          speak(data.feedback);
+
+          // 🌟 這裡開始進行「英中拆分」邏輯
+          const fullFeedback = data.feedback || "";
+          if (fullFeedback.includes(" | ")) {
+            const parts = fullFeedback.split(" | ");
+            const englishPart = parts[0].trim();   // 拿到英文評語
+            const chinesePart = parts[1].trim();   // 拿到繁體中文翻譯
+
+            // 1. 螢幕顯示：英文評語 + (中文翻譯)
+            document.getElementById('feedback').innerText = englishPart + "\n(" + chinesePart + ")";
+            
+            // 2. 語音：只唸英文部分
+            speak(englishPart);
+          } else {
+            // 萬一沒抓到分隔符號，就照舊顯示並朗讀
+            document.getElementById('feedback').innerText = fullFeedback;
+            speak(fullFeedback);
+          }
           
         } catch (err) {
           console.error("連線錯誤:", err);
-          document.getElementById('msg').innerText = "批改完成 (請檢查 GAS 回傳或 CORS 設定)";
-          
-          // 💡 註：本地檔案存取 GAS 有時會遇到 CORS 阻擋
-          // 如果看到「連線失敗」但 GAS 端有跑，代表我們該搬家到 GitHub 了！
+          document.getElementById('msg').innerText = "連線失敗，請檢查網路或網址";
         }
       };
-
-      recognition.onerror = function(event) {
-        isRecording = false;
-        if (event.error === 'not-allowed') {
-          document.getElementById('msg').innerHTML = "<span style='color:red'>權限被擋！請開啟麥克風。</span>";
-        } else {
-          document.getElementById('msg').innerText = "錄音錯誤: " + event.error;
-        }
-      };
-    }
 
     function repeatKiwi() {
       const feedback = document.getElementById('feedback').innerText;
-      if (feedback && feedback.length > 5) speak(feedback);
+      if (feedback && feedback.length > 5) {
+        // 如果有括號，只抓括號前的英文來唸
+        const englishOnly = feedback.split('(')[0].trim();
+        speak(englishOnly);
+      }
     }
   </script>
 </body>
