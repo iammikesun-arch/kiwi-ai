@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
     body { 
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
@@ -72,14 +73,13 @@
     
     .target-sentence { font-size: 24px; color: #2C3E50; font-weight: bold; padding: 10px; text-align: center; border-bottom: 2px dashed #FFE082; }
     
-    /* 學生說話區塊樣式 */
     .user-speech-bubble {
       background: #EBF4FF;
       border: 2px dashed #4A90E2;
       border-radius: 15px;
       padding: 12px;
       margin: 5px 0;
-      display: none; /* 初始隱藏 */
+      display: none; 
     }
     .user-label { font-size: 12px; color: #4A90E2; font-weight: bold; margin-bottom: 4px; }
     .user-text { font-size: 18px; color: #333; font-weight: 500; }
@@ -159,6 +159,7 @@
 
   let currentTarget = "";
   let currentMode = "correction";
+  let chatHistory = []; // 🆕 記憶對話歷史
 
   function speakEnglish(text) {
     if (!text) return;
@@ -176,6 +177,7 @@
 
   function setMode(mode) {
     currentMode = mode;
+    chatHistory = []; // 🆕 切換模式時重置記憶
     const pBtn = document.getElementById('btnPractice');
     const gBtn = document.getElementById('btnGame');
     if (mode === 'game') {
@@ -191,6 +193,7 @@
   }
 
   function loadPage() {
+    chatHistory = []; // 🆕 切換單元時重置記憶
     const key = document.getElementById('unitSelect').value;
     const data = bookData[key];
     document.getElementById('bookImg').src = data.img;
@@ -214,7 +217,7 @@
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   const recognition = new SpeechRecognition();
   recognition.lang = 'en-US';
-  recognition.interimResults = true; // 讓辨識過程更即時
+  recognition.interimResults = true;
 
   function handleMicClick() {
     if (document.getElementById('mainBtn').innerText.includes("START")) {
@@ -228,8 +231,6 @@
     document.getElementById('mainBtn').innerText = "🛑 STOP";
     document.getElementById('mainBtn').classList.add('btn-recording');
     document.getElementById('status-msg').innerText = "Listening...";
-    
-    // 顯示辨識區並初始化
     document.getElementById('userSpeechArea').style.display = "block";
     document.getElementById('userTranscript').innerText = "辨識中...";
     document.getElementById('userTranscript').style.color = "#999";
@@ -252,11 +253,9 @@
       }
     }
 
-    // 更新顯示文字
     const displayTranscript = finalTranscript || interimTranscript;
     document.getElementById('userTranscript').innerText = displayTranscript;
     
-    // 如果是最終結果，變更顏色並傳送給 API
     if (finalTranscript) {
       document.getElementById('userTranscript').style.color = "#333";
       document.getElementById('status-msg').innerText = "Kiwi is thinking...";
@@ -268,16 +267,34 @@
             target: currentTarget || "Hello", 
             studentText: finalTranscript, 
             mode: currentMode,
-            unit: document.getElementById('unitSelect').value 
+            unit: document.getElementById('unitSelect').value,
+            history: chatHistory // 🆕 傳送記憶給 GAS
           })
         });
         const data = await resp.json();
+        
+        // 🆕 處理彩帶效果
+        if (data.score >= 5) {
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#FF5A5A', '#FFE082', '#4A90E2']
+          });
+        }
+
         const parts = data.feedback.split('|');
         const eng = parts[0].trim();
         const zht = parts[1] ? parts[1].trim() : "";
         document.getElementById('feedback').innerText = eng + "\n" + zht;
         speakEnglish(eng);
         document.getElementById('status-msg').innerText = "Score: " + "⭐".repeat(data.score || 1);
+
+        // 🆕 更新對話記憶 (保留最近 6 條記錄)
+        chatHistory.push({ role: "user", parts: [{ text: `Student said: ${finalTranscript}` }] });
+        chatHistory.push({ role: "model", parts: [{ text: data.feedback }] });
+        if (chatHistory.length > 6) chatHistory.splice(0, 2);
+
       } catch (e) {
         document.getElementById('status-msg').innerText = "Error! Please check GAS Deployment.";
       }
