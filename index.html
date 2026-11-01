@@ -1,312 +1,464 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-  <style>
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      background: #FFF9E1; 
-      margin: 0; 
-      padding: 0; 
-      display: flex; 
-      height: 100vh; 
-      width: 100vw;
-      overflow: hidden; 
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kiwi AI Classroom</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        /* 基礎樣式 */
+        body { font-family: 'Segoe UI', sans-serif; background: #FFF9E1; margin: 0; padding: 0; }
+        
+        /* 登入區塊 */
+        #login-container { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; background: white; text-align: center; padding: 20px;
+        }
+        .login-box { max-width: 400px; width: 100%; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background: #FFFEF5; }
+        .login-input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 2px solid #FFE082; font-size: 16px; box-sizing: border-box; }
+        .btn-login { width: 100%; background: #FF5A5A; color: white; border: none; padding: 15px; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* 主畫面區塊 (預設隱藏) */
+        #main-container { display: none; flex-direction: row; gap: 15px; width: 100vw; height: 100vh; background: white; padding: 15px; box-sizing: border-box; }
+        .ebook-section { flex: 2; display: flex; align-items: center; justify-content: center; background: #f0f0f0; border-radius: 20px; overflow: hidden; }
+        .ebook-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .control-section { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 320px; background: #FFFEF5; padding: 20px; border-radius: 20px; box-shadow: -5px 0 15px rgba(0,0,0,0.05); overflow-y: auto; }
+        
+        /* 按鈕與組件樣式 */
+        .btn-sample { background: white; color: #4A90E2; border: 2px solid #4A90E2; padding: 10px 18px; border-radius: 20px; font-size: 15px; font-weight: bold; cursor: pointer; margin: 4px; }
+        .btn-sent { background: #E3F2FD; color: #1976D2; border: 2px solid #1976D2; padding: 12px 20px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; margin: 6px 0; text-align: left; width: 100%; }
+        .target-sentence { font-size: 24px; color: #2C3E50; font-weight: bold; padding: 10px; text-align: center; border-bottom: 2px dashed #FFE082; }
+        
+        /* 對話氣泡與回饋區 */
+        .feedback-box { display: flex; align-items: flex-start; gap: 12px; background: white; padding: 15px; border-radius: 15px; border-left: 6px solid #FFE082; min-height: 80px; margin-top: 10px; }
+        .btn-mic { width: 100%; background: #FF5A5A; color: white; border: none; padding: 20px; border-radius: 50px; font-size: 24px; font-weight: bold; cursor: pointer; margin-top: auto; transition: all 0.3s; }
+        
+        #control-area { background: #fdf2e9; padding: 10px; border-radius: 15px; border: 1px dashed #e67e22; margin-bottom: 5px; }
 
-    .main-container { 
-      display: flex; 
-      flex-direction: row; 
-      gap: 15px; 
-      width: 100%; 
-      height: 100%; 
-      background: white; 
-      padding: 15px; 
-      box-sizing: border-box; 
-    }
-
-    .ebook-section { 
-      flex: 2; 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f0f0f0;
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .ebook-img { 
-      max-width: 100%; 
-      max-height: 100%; 
-      width: auto;
-      height: auto;
-      border-radius: 10px; 
-      border: 3px solid #FFE082; 
-      object-fit: contain; 
-    }
-
-    .control-section { 
-      flex: 0.8; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px; 
-      min-width: 320px; 
-      background: #FFFEF5; 
-      padding: 20px; 
-      border-radius: 20px;
-      box-shadow: -5px 0 15px rgba(0,0,0,0.05);
-      overflow-y: auto; 
-    }
-
-    .mode-switch { display: flex; gap: 10px; }
-    .btn-mode { flex: 1; padding: 12px; border-radius: 12px; border: 2px solid #ddd; background: white; font-weight: bold; cursor: pointer; }
-    .btn-mode.active { border-color: #4A90E2; background: #EBF4FF; color: #4A90E2; }
-    .btn-mode.game-active { border-color: #FF9800; background: #FFF3E0; color: #E65100; }
-    
-    select { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #FF5A5A; font-size: 16px; font-weight: bold; color: #d32f2f; }
-
-    .practice-area { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-    .btn-sample { background: white; color: #4A90E2; border: 2px solid #4A90E2; padding: 10px 18px; border-radius: 20px; font-size: 15px; font-weight: bold; cursor: pointer; }
-    .btn-sentence { border-color: #FF5A5A; color: #FF5A5A; }
-    
-    .target-sentence { font-size: 24px; color: #2C3E50; font-weight: bold; padding: 10px; text-align: center; border-bottom: 2px dashed #FFE082; }
-    
-    .user-speech-bubble {
-      background: #EBF4FF;
-      border: 2px dashed #4A90E2;
-      border-radius: 15px;
-      padding: 12px;
-      margin: 5px 0;
-      display: none; 
-    }
-    .user-label { font-size: 12px; color: #4A90E2; font-weight: bold; margin-bottom: 4px; }
-    .user-text { font-size: 18px; color: #333; font-weight: 500; }
-
-    .feedback-box { display: flex; align-items: flex-start; gap: 12px; background: white; padding: 15px; border-radius: 15px; border-left: 6px solid #FFE082; min-height: 100px; }
-    .kiwi-avatar { width: 60px; height: 60px; cursor: pointer; }
-    .kiwi-text { color: #e67e22; font-size: 18px; text-align: left; line-height: 1.4; white-space: pre-line; }
-
-    .btn-mic { width: 100%; background: #FF5A5A; color: white; border: none; padding: 20px; border-radius: 50px; font-size: 24px; font-weight: bold; box-shadow: 0 6px #d32f2f; cursor: pointer; margin-top: auto; }
-    .btn-recording { background: #4CAF50 !important; box-shadow: 0 6px #388E3C !important; }
-    
-    #status-msg { color: #95a5a6; font-size: 14px; font-style: italic; text-align: center; }
-
-    @media (max-width: 900px) { 
-      body { height: auto; overflow: visible; }
-      .main-container { flex-direction: column; height: auto; } 
-      .ebook-section { height: 60vh; }
-      .control-section { min-width: unset; } 
-    }
-  </style>
+        @media (max-width: 900px) { #main-container { flex-direction: column; overflow-y: auto; } .ebook-section { height: 40vh; } }
+    </style>
 </head>
 <body>
 
-<div class="main-container">
-  <div class="ebook-section"><img id="bookImg" class="ebook-img" src="2.jpg"></div>
-  <div class="control-section">
-    <select id="unitSelect" onchange="loadPage()">
-      <optgroup label="Unit 1: What's the Matter?">
-        <option value="U1_P2">U1 P.2 - Body Parts</option>
-        <option value="U1_P4">U1 P.4 - Let's Sing</option>
-        <option value="U1_P6" selected>U1 P.6 - Jobs</option>
-        <option value="U1_P8">U1 P.8 - Practice</option>
-      </optgroup>
-      <optgroup label="Unit 2: What Day Is Today?">
-        <option value="U2_P10">U2 P.10 - Let's Talk</option>
-        <option value="U2_P12">U2 P.12 - Let's Sing</option>
-        <option value="U2_P14">U2 P.14 - Let's Learn</option>
-        <option value="U2_P16">U2 P.16 - Practice</option>
-      </optgroup>
-    </select>
-
-    <div class="mode-switch">
-      <button id="btnPractice" class="btn-mode active" onclick="setMode('correction')">📖 練習</button>
-      <button id="btnGame" class="btn-mode" onclick="setMode('game')">🎮 AI互動</button>
+<div id="login-container">
+    <div class="login-box">
+        <img src="https://cdn-icons-png.flaticon.com/512/826/826913.png" width="80">
+        <h2 style="color: #FF5A5A;">Kiwi AI Classroom</h2>
+        <input type="text" id="stuName" class="login-input" placeholder="English Name (e.g. Mike)">
+        <input type="tel" id="stuPhone" class="login-input" placeholder="Phone Number">
+        <button class="btn-login" onclick="handleLogin()">Login</button>
+        <p id="login-status" style="font-size: 14px; color: #999;"></p>
     </div>
+</div>
 
-    <div id="targetSentence" class="target-sentence">Ready to learn?</div>
-    <div id="wordList" class="practice-area"></div>
-
-    <div id="userSpeechArea" class="user-speech-bubble">
-      <div class="user-label">You said:</div>
-      <div id="userTranscript" class="user-text">Listening...</div>
+<div id="main-container">
+    <div class="ebook-section">
+        <img id="bookImg" class="ebook-img" src="" alt="Textbook">
     </div>
+    <div class="control-section">
+        <h3 id="welcome-msg" style="margin: 0; color: #e67e22;">Welcome!</h3>
+        <p id="unit-info" style="margin: 0; font-weight: bold; color: #999;"></p>
+        
+        <div id="control-area" style="display:none;">
+            <div id="teacher-level-box" style="margin-bottom: 8px; display: none;">
+                <label style="font-size: 12px; color: #e67e22; font-weight: bold;">Level:</label>
+                <select id="levelSelect" class="login-input" style="padding: 8px; font-size: 14px; margin: 0;" onchange="changeUnit(true)">
+                    <option value="1">K1</option>
+                    <option value="2">K2</option>
+                    <option value="3">K3</option>
+                    <option value="4">K4</option>
+                    <option value="5">K5</option>
+                    <option value="6">K6</option>
+                    <option value="7">K7</option>
+                </select>
+            </div>
+            <label style="font-size: 12px; color: #e67e22; font-weight: bold;">Select Lesson:</label>
+            <select id="lessonSelect" class="login-input" style="padding: 8px; font-size: 14px; margin: 0;" onchange="changeUnit(false)"></select>
+        </div>
+        
+        <div id="targetSentence" class="target-sentence">Ready to Start?</div>
 
-    <div class="feedback-box">
-      <img class="kiwi-avatar" src="https://cdn-icons-png.flaticon.com/512/826/826913.png" onclick="repeatKiwi()">
-      <div id="feedback" class="kiwi-text">Pick a word to start!</div>
+        <div id="student-speech-bubble" style="display:none; background: #E3F2FD; color: #1976D2; padding: 12px 18px; border-radius: 15px; margin: 10px 0; font-style: italic; border: 1px solid #BBDEFB; line-height: 1.4;">
+            🎤 You said: <span id="speech-text" style="font-weight: bold; text-decoration: underline;">...</span>
+        </div>
+        
+        <div id="wordList" style="margin-top: 10px;"></div>
+        <div id="sentenceList" style="margin-top: 10px;"></div>
+<div class="feedback-box" style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 30px; padding: 15px;">
+    <img src="https://cdn-icons-png.flaticon.com/512/826/826913.png" width="55" style="flex-shrink: 0;">
+    
+    <div style="display: flex; flex-direction: column; flex: 1; text-align: left;">
+        <div id="feedback" style="color: #e67e22; font-size: 18px; line-height: 1.4; min-height: 24px; margin-bottom: 5px;">
+            Hello! I am Kiwi. Pick a word to practice!
+        </div>
+        <div id="star-rating" style="font-size: 28px; color: #f39c12; height: 35px; line-height: 35px;">
+            ☆☆☆☆☆
+        </div>
     </div>
-    <div id="status-msg">Waiting...</div>
-    <button id="mainBtn" class="btn-mic" onclick="handleMicClick()">🎤 START CHALLENGE</button>
-  </div>
+</div>
+
+<div style="text-align: center;">
+    <button id="mainBtn" class="btn-mic" onclick="toggleRecognition()" style="padding: 10px 25px; font-size: 16px; min-height: 45px; width: auto; margin: 0 auto; display: inline-block;">
+        🎤 START SPEAKING
+    </button>
+    <p id="status-msg" style="text-align: center; font-style: italic; color: #999; font-size: 14px; margin-top: 10px; height: 20px;"></p>
 </div>
 
 <script>
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbx13nltRgibY3ydL0sQyWm5meJxtdqm7qGYEgARkY3-1ThXYhKc9LoT4TmBPGBLSGu6/exec";
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbzktUoczeJ0Em5ybjPG7eHBYfi1ka1_73rS1IjmqXfzo5B89UVKnFown2XCK3kkeMLrtQ/exec";
 
-  const bookData = {
-    "U1_P2": { img: "2.jpg", words: ["Eye", "Ear", "Nose", "Mouth", "Head"], sentences: ["My eye hurts."] },
-    "U1_P4": { img: "4.jpg", words: ["Doctor", "Nurse", "Patient"], sentences: ["I am a doctor."] },
-    "U1_P6": { img: "6.jpg", words: ["Student", "Teacher", "Cook", "Driver"], sentences: ["Are you a doctor?"] },
-    "U1_P8": { img: "8.jpg", words: ["Ambulance", "Mail carrier"], sentences: ["Is he a doctor?"] },
-    "U2_P10": { img: "10.jpg", words: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"], sentences: ["What day is today?"] },
-    "U2_P12": { img: "12.jpg", words: ["Walk", "Run", "Hop", "Jump"], sentences: ["We have no time to play."] },
-    "U2_P14": { img: "14.jpg", words: ["Skate", "Ski", "Sing", "Dance", "Swim"], sentences: ["I can skate."] },
-    "U2_P16": { img: "16.jpg", words: ["Kite"], sentences: ["Can you fly a kite?"] }
-  };
+    let currentStudent = null;
+    let currentTextbook = null;
+    let currentTarget = "";
 
-  let currentTarget = "";
-  let currentMode = "correction";
-  let chatHistory = []; // 🆕 記憶對話歷史
-
-  function speakEnglish(text) {
-    if (!text) return;
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.lang = 'en-US'; 
-    utt.rate = 0.85;
-    const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) || 
-                    voices.find(v => v.lang.includes('en-US')) || 
-                    voices.find(v => v.lang.includes('en'));
-    if (enVoice) utt.voice = enVoice;
-    window.speechSynthesis.speak(utt);
-  }
-
-  function setMode(mode) {
-    currentMode = mode;
-    chatHistory = []; // 🆕 切換模式時重置記憶
-    const pBtn = document.getElementById('btnPractice');
-    const gBtn = document.getElementById('btnGame');
-    if (mode === 'game') {
-      gBtn.classList.add('game-active'); pBtn.classList.remove('active');
-      document.getElementById('wordList').innerHTML = ""; 
-      document.getElementById('targetSentence').innerText = "🎮 Game Mode!";
-      document.getElementById('feedback').innerText = "Say 'Hello' to Kiwi!";
-      document.getElementById('userSpeechArea').style.display = "none";
-    } else {
-      pBtn.classList.add('active'); gBtn.classList.remove('game-active');
-      loadPage();
-    }
-  }
-
-  function loadPage() {
-    chatHistory = []; // 🆕 切換單元時重置記憶
-    const key = document.getElementById('unitSelect').value;
-    const data = bookData[key];
-    document.getElementById('bookImg').src = data.img;
-    if (currentMode === 'game') return;
-    const listDiv = document.getElementById('wordList');
-    listDiv.innerHTML = "";
-    data.words.forEach(w => {
-      const btn = document.createElement("button");
-      btn.className = "btn-sample"; btn.innerText = w;
-      btn.onclick = () => { currentTarget = w; document.getElementById('targetSentence').innerText = `"${w}"`; speakEnglish(w); };
-      listDiv.appendChild(btn);
-    });
-    data.sentences.forEach(s => {
-      const btn = document.createElement("button");
-      btn.className = "btn-sample btn-sentence"; btn.innerText = "Sentence 🗣️";
-      btn.onclick = () => { currentTarget = s; document.getElementById('targetSentence').innerText = `"${s}"`; speakEnglish(s); };
-      listDiv.appendChild(btn);
-    });
-  }
-
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const recognition = new SpeechRecognition();
-  recognition.lang = 'en-US';
-  recognition.interimResults = true;
-
-  function handleMicClick() {
-    if (document.getElementById('mainBtn').innerText.includes("START")) {
-      recognition.start();
-    } else {
-      recognition.stop();
-    }
-  }
-
-  recognition.onstart = () => {
-    document.getElementById('mainBtn').innerText = "🛑 STOP";
-    document.getElementById('mainBtn').classList.add('btn-recording');
-    document.getElementById('status-msg').innerText = "Listening...";
-    document.getElementById('userSpeechArea').style.display = "block";
-    document.getElementById('userTranscript').innerText = "辨識中...";
-    document.getElementById('userTranscript').style.color = "#999";
-  };
-
-  recognition.onend = () => {
-    document.getElementById('mainBtn').innerText = "🎤 START CHALLENGE";
-    document.getElementById('mainBtn').classList.remove('btn-recording');
-  };
-
-  recognition.onresult = async (event) => {
-    let interimTranscript = '';
-    let finalTranscript = '';
-
-    for (let i = event.resultIndex; i < event.results.length; ++i) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript;
-      } else {
-        interimTranscript += event.results[i][0].transcript;
-      }
+    // --- 登入邏輯 ---
+    async function handleLogin() {
+        const name = document.getElementById('stuName').value.trim();
+        const phone = document.getElementById('stuPhone').value.trim();
+        const status = document.getElementById('login-status');
+        if (!name || !phone) { status.innerText = "Please fill in both name and phone."; return; }
+        status.innerText = "Logging in... Please wait.";
+        try {
+            const resp = await fetch(`${GAS_URL}?action=login&name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`);
+            const responseData = await resp.json();
+            if (responseData.success) {
+                currentStudent = responseData.student || responseData; 
+                currentTextbook = responseData; 
+                showMain();
+            } else { status.innerText = "❌ " + responseData.msg; }
+        } catch (e) { status.innerText = "❌ Connection Error."; }
     }
 
-    const displayTranscript = finalTranscript || interimTranscript;
-    document.getElementById('userTranscript').innerText = displayTranscript;
-    
-    if (finalTranscript) {
-      document.getElementById('userTranscript').style.color = "#333";
-      document.getElementById('status-msg').innerText = "Kiwi is thinking...";
-      
-      try {
-        const resp = await fetch(GAS_URL, {
-          method: "POST",
-          body: JSON.stringify({ 
-            target: currentTarget || "Hello", 
-            studentText: finalTranscript, 
-            mode: currentMode,
-            unit: document.getElementById('unitSelect').value,
-            history: chatHistory // 🆕 傳送記憶給 GAS
-          })
-        });
-        const data = await resp.json();
-        
-        // 🆕 處理彩帶效果
-        if (data.score >= 5) {
-          confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#FF5A5A', '#FFE082', '#4A90E2']
-          });
+function showMain() {
+        if (!currentStudent || !currentTextbook) return;
+        const myRole = currentStudent.role || currentTextbook.role || "";
+        const myLevel = currentStudent.level || currentTextbook.level || "K2";
+        const book = currentTextbook.textbook ? currentTextbook.textbook : currentTextbook;
+        const options = currentTextbook.allOptions || [];
+
+        document.getElementById('login-container').style.display = 'none';
+        document.getElementById('main-container').style.display = 'flex';
+        document.getElementById('welcome-msg').innerText = `Hi, ${currentStudent.name || 'User'}!`;
+        document.getElementById('unit-info').innerText = `Level ${myLevel} : ${book.unit || ""} - ${book.page || ""}`;
+        document.getElementById('control-area').style.display = 'block'; 
+
+        if (myRole && myRole.toLowerCase() === "teacher") {
+            document.getElementById('teacher-level-box').style.display = 'block'; 
+            document.getElementById('levelSelect').value = myLevel.replace("K", "");
         }
 
-        const parts = data.feedback.split('|');
-        const eng = parts[0].trim();
-        const zht = parts[1] ? parts[1].trim() : "";
-        document.getElementById('feedback').innerText = eng + "\n" + zht;
-        speakEnglish(eng);
-        document.getElementById('status-msg').innerText = "Score: " + "⭐".repeat(data.score || 1);
+        const lessonSelect = document.getElementById('lessonSelect');
+        if (options.length > 0) {
+            lessonSelect.innerHTML = "";
+            options.forEach(opt => {
+                const el = document.createElement("option");
+                el.value = opt.value; el.innerText = opt.label;
+                lessonSelect.appendChild(el);
+            });
+            lessonSelect.value = `${book.unit}|${book.page}`;
+        }
+        document.getElementById('bookImg').src = book.imageUrl || "";
 
-        // 🆕 更新對話記憶 (保留最近 6 條記錄)
-        chatHistory.push({ role: "user", parts: [{ text: `Student said: ${finalTranscript}` }] });
-        chatHistory.push({ role: "model", parts: [{ text: data.feedback }] });
-        if (chatHistory.length > 6) chatHistory.splice(0, 2);
+        // 更新清單
+        renderList('wordList', book.words, book.wordAudio, 'btn-sample', ',');
+        renderList('sentenceList', book.sentences, book.sentAudio, 'btn-sent', '|');
 
-      } catch (e) {
-        document.getElementById('status-msg').innerText = "Error! Please check GAS Deployment.";
-      }
+        // 🚀 --- 修改這裡：只更新變數，不要觸發事件 ---
+        // 這樣就不會回頭去跑 changeUnit，也就不會造成無限迴圈
+        // 🚀 修改後的版本：確保 level 也被同步進去
+        currentTextbook = {
+            ...currentTextbook, 
+            level: myLevel,      // 👈 關鍵：一定要存入目前的 Level (例如 K4 或 K7)
+            unit: book.unit,
+            page: book.page,
+            words: book.words,
+            sentences: book.sentences, // 建議連句型也一起同步
+            aiScript: book.aiScript || "" 
+        };
+        
+        // 修改 Log，讓你一眼看出 Level 有沒有跑掉
+        console.log(`✅ 教材變數同步成功 | 等級: ${myLevel} | 單元: ${book.unit} | 頁碼: ${book.page}`);
     }
-  };
 
-  function repeatKiwi() {
-    const text = document.getElementById('feedback').innerText.split('\n')[0];
-    speakEnglish(text);
-  }
+    function renderList(elemId, data, audios, className, splitChar) {
+        const area = document.getElementById(elemId);
+        area.innerHTML = data ? `<p style='font-size:12px; color:#999; margin:5px 0;'>${elemId.includes('word') ? 'Words' : 'Sentences'}:</p>` : "";
+        if (data) {
+            const items = String(data).split(splitChar).map(s => s.trim());
+            const audioArr = (audios || "").split(splitChar).map(s => s.trim());
+            items.forEach((item, index) => {
+                if(!item) return;
+                const btn = document.createElement("button");
+                btn.className = className;
+                btn.innerText = item;
+                btn.onclick = () => {
+                    currentTarget = item;
+                    document.getElementById('targetSentence').innerText = `"${currentTarget}"`;
+                    playSpecificAudio(audioArr[index], item);
+                };
+                area.appendChild(btn);
+            });
+        }
+    }
 
-  window.onload = loadPage;
+    function playSpecificAudio(audioData, backupText) {
+        if (audioData && audioData.startsWith("data:audio")) {
+            new Audio(audioData).play().catch(() => speakText(backupText));
+        } else { speakText(backupText); }
+    }
+
+    function speakText(text) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.lang = 'en-US';
+        window.speechSynthesis.speak(utt);
+    }
+
+    // --- 🚀 語音辨識、動態 UI 與 自動停止邏輯 ---
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    let silenceTimer = null; // 🚀 用來存放 5 秒計時器
+
+    // 啟動 5 秒倒數計時
+    function startSilenceTimer() {
+        clearTimeout(silenceTimer); // 先清除舊的
+        silenceTimer = setTimeout(() => {
+            console.log("⏰ 5秒沒聽到聲音，自動停止...");
+            recognition.stop();
+            updateMicUI('no-speech'); // 顯示重試狀態
+        }, 5000); // 5000 毫秒 = 5 秒
+    }
+
+    // 清除計時器
+    function startSilenceTimer() {
+        clearTimeout(silenceTimer);
+        silenceTimer = setTimeout(() => {
+            console.log("⏰ 5秒沒聽到聲音，強制結束...");
+            // 🚀 重點：我們先更新 UI，再停止錄音，並用一個旗標防止被覆蓋
+            updateMicUI('no-speech');
+            recognition.isAutoStop = true; // 標記這是自動停止的
+            recognition.stop();
+        }, 5000);
+    }
+
+    function stopSilenceTimer() {
+        clearTimeout(silenceTimer);
+    }
+
+    // 🚀 修改 onerror 監聽
+    recognition.onerror = (event) => {
+        stopSilenceTimer();
+        console.error("Recognition Error:", event.error);
+
+        // 如果已經是自動停止狀態，就不要再被錯誤事件改回 ready
+        if (recognition.isAutoStop) return;
+
+        if (event.error === 'no-speech') {
+            updateMicUI('no-speech');
+        } else {
+            updateMicUI('ready');
+        }
+    };
+
+    // 🚀 修改 onspeechend 監聽
+    recognition.onspeechend = () => { 
+        stopSilenceTimer(); 
+        recognition.stop();
+        // 如果不是自動停止，也不是正在處理，才跳回 ready
+        setTimeout(() => {
+            const btn = document.getElementById('mainBtn');
+            if (!btn.innerText.includes("ANALYZING") && !btn.innerText.includes("RETRY")) {
+                updateMicUI('ready');
+            }
+        }, 100);
+    };
+
+    function updateMicUI(status) {
+        const btn = document.getElementById('mainBtn');
+        const statusMsg = document.getElementById('status-msg');
+        switch(status) {
+            case 'listening':
+                btn.innerText = "🛑 STOP & ANALYZE";
+                btn.style.background = "#FFC107";
+                statusMsg.innerText = "Kiwi is listening... 👂";
+                break;
+            case 'processing':
+                btn.innerText = "⏳ ANALYZING...";
+                btn.style.background = "#4CAF50";
+                statusMsg.innerText = "Kiwi is thinking... 🧠";
+                break;
+            case 'no-speech':
+                btn.innerText = "🎤 RETRY";
+                btn.style.background = "#FF5A5A";
+                statusMsg.innerText = "I didn't hear anything. Try again! 🤫";
+                break;
+            default:
+                btn.innerText = "🎤 START SPEAKING";
+                btn.style.background = "#FF5A5A";
+                statusMsg.innerText = "Tap the button to talk to Kiwi!";
+        }
+    }
+
+ // 🚀 修改 toggleRecognition
+    // ==========================================
+// 1. 控制開關 (Toggle)
+// ==========================================
+function toggleRecognition() {
+    const btn = document.getElementById('mainBtn');
+    recognition.isAutoStop = false; // 重置旗標
+
+    if (btn.innerText.includes("STOP")) {
+        stopSilenceTimer();
+        recognition.stop();
+        updateMicUI('processing');
+        return;
+    }
+    try {
+        document.getElementById('student-speech-bubble').style.display = 'none';
+        recognition.start();
+        updateMicUI('listening');
+        startSilenceTimer(); 
+    } catch (e) { 
+        recognition.stop();
+        setTimeout(() => { 
+            recognition.start(); 
+            updateMicUI('listening'); 
+        }, 200);
+    }
+}
+
+// ==========================================
+// 2. 語音偵測事件
+// ==========================================
+recognition.onsoundstart = () => {
+    console.log("🔊 偵測到聲音，取消 5 秒自動停止");
+    recognition.isAutoStop = false; 
+    stopSilenceTimer();
+};
+
+recognition.onspeechend = () => { 
+    stopSilenceTimer();
+    recognition.stop(); 
+};
+
+recognition.onerror = (event) => {
+    stopSilenceTimer();
+    console.error("Recognition Error:", event.error);
+    if (event.error === 'no-speech') {
+        updateMicUI('no-speech');
+    } else {
+        updateMicUI('ready');
+        document.getElementById('status-msg').innerText = "Mic Error: " + event.error;
+    }
+};
+
+// ==========================================
+// 3. 核心邏輯：辨識成功並送往 GAS (已修正重複與 K5 問題)
+// ==========================================
+recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    console.log("✅ 辨識成功:", transcript);
+    
+    // 顯示學生說話氣泡
+    document.getElementById('speech-text').innerText = transcript;
+    document.getElementById('student-speech-bubble').style.display = 'block';
+
+    updateMicUI('processing');
+
+    // 🚀 [關鍵] 強制從選單抓取最新的 Level/Unit/Page，避免抓到舊變數
+    const levelVal = document.getElementById('levelSelect').value;
+    const lessonVal = document.getElementById('lessonSelect').value;
+    const [u, p] = lessonVal ? lessonVal.split('|') : ["", ""];
+    const finalLevel = "K" + levelVal;
+
+    const params = new URLSearchParams({
+        action: "processSpeech",
+        speech: transcript,
+        target: currentTarget || "Hello",
+        name: currentStudent.name,
+        phone: currentStudent.phone,
+        level: finalLevel,
+        unit: u,
+        page: p
+    });
+
+    console.log(`📡 準備送往 GAS: ${finalLevel} | ${u} | ${p}`);
+
+    try {
+        const resp = await fetch(`${GAS_URL}?${params.toString()}`);
+        const res = await resp.json();
+        
+        // --- Debug 監控輸出 ---
+        console.log("======= Kiwi 後端自白 =======");
+        if (res.debugFromGAS) {
+            console.log("1. 查表狀態:", res.debugFromGAS.status);
+            console.log("2. 參數對齊:", JSON.stringify(res.debugFromGAS.received_params));
+            console.log("3. 教材 D 欄 (Words):", res.debugFromGAS.what_GAS_saw.words);
+            
+            if (res.debugFromGAS.status.includes("❌")) {
+               document.getElementById('feedback').innerHTML = "<b style='color:red;'>[系統警告] 後端找不到此課資料！</b>";
+            }
+        }
+        console.log("============================");
+
+        const ai = res.data || res; 
+
+        if (ai.feedback) {
+            // A. 顯示評語與翻譯
+            document.getElementById('feedback').innerText = ai.feedback + (ai.translation ? "\n(" + ai.translation + ")" : "");
+            
+            // B. 顯示星星評分
+            const score = parseInt(ai.score) || 0;
+            const starRatingEl = document.getElementById('star-rating');
+            if (starRatingEl) {
+                starRatingEl.innerHTML = "⭐".repeat(score) + "☆".repeat(Math.max(0, 5 - score));
+            }
+
+            // C. 滿分 4-5 星撒花
+            if (score >= 4) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+            
+            // D. 播放 AI 語音
+            if (ai.audio) {
+                const audio = new Audio("data:audio/mp3;base64," + ai.audio);
+                audio.play().catch(e => console.error("Audio error", e));
+            }
+        }
+    } catch (e) {
+        console.error("Fetch error:", e);
+        document.getElementById('feedback').innerText = "Kiwi teacher is a bit sleepy. Try again!";
+    }
+    updateMicUI('ready');
+};
+    // --- 單元切換 ---
+    async function changeUnit(isLevelChange = false) {
+        const lessonSelect = document.getElementById('lessonSelect');
+        const levelSelect = document.getElementById('levelSelect');
+        const statusEl = document.getElementById('status-msg');
+
+        let level = (currentStudent.role === "Teacher") ? "K" + levelSelect.value : currentStudent.level;
+        let selectedUnit = "", selectedPage = "";
+        if (!isLevelChange && lessonSelect.value) {
+            [selectedUnit, selectedPage] = lessonSelect.value.split('|');
+        }
+
+        statusEl.innerText = `Loading ${level}...`;
+        try {
+            const fetchUrl = `${GAS_URL}?action=getTeacherData&unit=${encodeURIComponent(selectedUnit)}&page=${encodeURIComponent(selectedPage)}&level=${level}&_=${Date.now()}`;
+            const resp = await fetch(fetchUrl);
+            const data = await resp.json();
+            if (data.success) {
+                currentTextbook = data;
+                if (currentStudent.role === "Teacher") currentStudent.level = level;
+                showMain();
+                statusEl.innerText = "Loaded!";
+            }
+        } catch (e) { statusEl.innerText = "Load Failed."; }
+    }
 </script>
 </body>
 </html>
